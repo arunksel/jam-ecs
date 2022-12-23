@@ -1,0 +1,164 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: >-
+  This Cloudformation template sets up a Challenge which involves deploying a container using required image.
+
+Parameters:
+
+  ClusterName:
+    Description: Please specify the Cluster Name
+    Type: String
+    Default: "ecs-fargate-task3"
+
+  ECRRepoName:
+    Description: Please specify ECR repo Name
+    Type: String
+    Default: "jam-repo"
+
+Resources:
+
+  ECSCluster:
+    Type: 'AWS::ECS::Cluster'
+    Properties:
+      ClusterName: !Ref ClusterName
+
+  ALBSG:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: Enable HTTP to the load balancer
+      VpcId: 
+        Fn::ImportValue: "core-setup-VPCID"
+
+  ContainerSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: ECS Security Group
+      VpcId:
+        Fn::ImportValue: "core-setup-VPCID"
+
+  ECSTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    DependsOn: ECSLoadBalancer
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Name: ECSTargetGroup3
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+      UnhealthyThresholdCount: 2
+      VpcId:
+        Fn::ImportValue: "core-setup-VPCID"
+
+  ALBTG1Listener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    DependsOn: ECSTaskExecutionRole
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ECSTargetGroup
+      LoadBalancerArn: !Ref ECSLoadBalancer
+      Port: '80'
+      Protocol: HTTP
+      
+  ECSLoadBalancer:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: ECSALB3
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '30'
+      Subnets:
+        - Fn::ImportValue: "core-setup-PublicSubnet1ID"
+        - Fn::ImportValue: "core-setup-PublicSubnet2ID"
+      SecurityGroups:
+        - !Ref ALBSG
+
+  CloudwatchLogsGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Join 
+        - '-'
+        - - ECSLogGroup
+          - !Ref 'AWS::StackName'
+      RetentionInDays: 1
+
+  ECSTaskExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
+
+  ECSService:
+    Type: AWS::ECS::Service
+    DependsOn: [ALBTG1Listener]
+    Properties:
+      ServiceName: !Join ['-', [!Ref 'AWS::AccountId', 'ECSService3']]
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref ECSTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - Fn::ImportValue: "core-setup-PublicSubnet1ID"
+            - Fn::ImportValue: "core-setup-PublicSubnet2ID"
+          SecurityGroups:
+            - !Ref ContainerSecurityGroup
+      LoadBalancers:
+        - ContainerName: web-app
+          ContainerPort: '80'
+          TargetGroupArn: !Ref ECSTargetGroup
+
+  ECSTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      Family: !Join 
+        - ''
+        - - !Ref 'AWS::StackName'
+          - '-ecs-demo-app'
+      NetworkMode: awsvpc
+      Cpu: '256'
+      Memory: '512'
+      ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+      RequiresCompatibilities:
+        - FARGATE
+      RuntimePlatform:
+        OperatingSystemFamily: LINUX 
+      ContainerDefinitions:
+        - Name: web-app
+          Cpu: '10'
+          Essential: 'true'
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepoName}:latest
+          Memory: '128'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref CloudwatchLogsGroup
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: ecs-demo
+          PortMappings:
+            - ContainerPort: 80
+          HealthCheck:
+            Command:
+                - "CMD-SHELL"
+                - "curl -f http://localhost:80"
+            Retries: 5
+
+Outputs:
+
+  ALBDNS:
+    Description: DNS name of the load balancer
+    Value: !GetAtt ECSLoadBalancer.DNSName
