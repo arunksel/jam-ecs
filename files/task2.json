@@ -1,0 +1,38 @@
+{
+    "family": "ecs-fargate-task2", 
+    "networkMode": "awsvpc", 
+    "requiresCompatibilities": [
+        "FARGATE"
+    ], 
+    "cpu": "256", 
+    "memory": "512",
+    "runtimePlatform": {
+        "operatingSystemFamily": "LINUX"
+    },
+    "executionRoleArn": "arn:aws:iam::418229042613:role/LabStack-prewarm-f62a83d8-2422-4c4b-ECSFargateRole-1HI52F30WCQCL",
+    "containerDefinitions": [
+    {
+        "name": "web-app",
+        "cpu": 10,
+        "memory": 128,
+        "essential": true,
+        "image": "418229042613.dkr.ecr.us-east-1.amazonaws.com/jam-repo:latest",
+        "portMappings": [
+        {
+            "containerPort": 80
+        }],
+        "healthCheck": {
+            "command": ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"],
+            "retries": 5
+        },
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": "ecs-tasks-loggroup",
+                "awslogs-region": "us-east-1",
+                "awslogs-create-group": "true",
+                "awslogs-stream-prefix": "ecs-logs"
+            }
+        }
+    }]
+}

@@ -1,0 +1,22 @@
+{
+    "cluster": "ecs-fargate-task2",
+    "serviceName": "task2-service",
+    "taskDefinition": "ecs-fargate-task2",
+    "desiredCount": 1,
+    "loadBalancers": [
+        {
+            "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:418229042613:targetgroup/ECSTargetGroup2/6cb3715244ccef0c",
+            "containerName": "web-app",
+            "containerPort": 80
+        }
+    ],
+    "launchType": "FARGATE",
+    "platformVersion": "LATEST",
+    "networkConfiguration": {
+       "awsvpcConfiguration": {
+          "assignPublicIp": "ENABLED",
+          "securityGroups": ["sg-0b956910501022334"],
+          "subnets": ["subnet-03275d9ab40fa947f","subnet-09479f4fdede9f532"]
+       }
+    }
+}
