@@ -1,0 +1,38 @@
+{
+    "family": "ecs-fargate-task4", 
+    "networkMode": "awsvpc", 
+    "requiresCompatibilities": [
+        "FARGATE"
+    ], 
+    "cpu": "256", 
+    "memory": "512",
+    "runtimePlatform": {
+        "operatingSystemFamily": "LINUX"
+    },
+    "executionRoleArn": "EXECUTION_ROLE_ARN",
+    "containerDefinitions": [
+    {
+        "name": "web-app",
+        "cpu": 10,
+        "memory": 128,
+        "essential": true,
+        "image": "ECR_REPO",
+        "portMappings": [
+        {
+            "containerPort": 80
+        }],
+        "healthCheck": {
+            "command": ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"],
+            "retries": 5
+        },
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": "ecs-tasks-loggroup",
+                "awslogs-region": "AWS_REGION",
+                "awslogs-create-group": "true",
+                "awslogs-stream-prefix": "ecs-logs"
+            }
+        }
+    }]
+}

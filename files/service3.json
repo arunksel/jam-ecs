@@ -1,0 +1,22 @@
+{
+    "cluster": "ecs-fargate-task3",
+    "serviceName": "task3-service",
+    "taskDefinition": "ecs-fargate-task3",
+    "desiredCount": 1,
+    "loadBalancers": [
+        {
+            "targetGroupArn": "<TARGET_GROUP_ARN>",
+            "containerName": "web-app",
+            "containerPort": 80
+        }
+    ],
+    "launchType": "FARGATE",
+    "platformVersion": "LATEST",
+    "networkConfiguration": {
+       "awsvpcConfiguration": {
+          "assignPublicIp": "ENABLED",
+          "securityGroups": ["SECURITY_GROUP_ID"],
+          "subnets": ["SUBNET_1_ID","SUBNET_2_ID"]
+       }
+    }
+}
