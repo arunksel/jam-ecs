@@ -29,7 +29,7 @@
             "logDriver": "awslogs",
             "options": {
                 "awslogs-group": "ecs-tasks-loggroup",
-                "awslogs-region": "<AWS_REGION>",
+                "awslogs-region": "AWS_REGION",
                 "awslogs-create-group": "true",
                 "awslogs-stream-prefix": "ecs-logs"
             }

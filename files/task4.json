@@ -16,7 +16,7 @@
         "cpu": 10,
         "memory": 128,
         "essential": true,
-        "image": "ECR_REPO",
+        "image": "ECR_IMAGE_URI",
         "portMappings": [
         {
             "containerPort": 80

@@ -5,7 +5,7 @@
     "desiredCount": 1,
     "loadBalancers": [
         {
-            "targetGroupArn": "<TARGET_GROUP_ARN>",
+            "targetGroupArn": "TARGET_GROUP_ARN",
             "containerName": "web-app",
             "containerPort": 80
         }
